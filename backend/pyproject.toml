@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "e-commerce"
+version = "0.1.0"
+description = ""
+authors = ["William M <Akbeeeh@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.13"
+apache-airflow = "^2.7.1"
+faker = "^19.6.2"
+pytest = "^7.4.2"
+ipykernel = "^6.25.2"
+pandas = "^2.1.1"
+pandasql = "^0.7.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
