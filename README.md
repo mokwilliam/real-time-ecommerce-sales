@@ -32,13 +32,43 @@ poetry add pandas pandasql apache-airflow faker pytest ipykernel mysql-connector
 # `poetry shell` to access the environment in the terminal and `exit` to exit the environment
 ```
 
+- Airflow (do not forget to run with Poetry: `poetry run...`)
+
+```bash
+# At the project root
+# Everytime for a new terminal, must execute the line below to put correctly the AIRFLOW_HOME
+export AIRFLOW_HOME=$(pwd)/airflow
+airflow db migrate
+# And here replace the generated airflow.cfg by the personal one
+cp -f backend/airflow.cfg airflow/
+airflow users create \
+    --username admin \
+    --firstname admin \
+    --lastname admin \
+    --role Admin \
+    --email admin \
+    --password admin
+
+# To run the webserver and the scheduler
+airflow webserver -p 8080
+airflow scheduler
+```
+
+```bash
+# Some parameters changed made in the airflow.cfg
+executor = LocalExecutor
+load_examples = False
+expose_config = True
+```
+
 ### 1. Create the Python script(s)
 
 - The generation of fake data is done using Faker, in the gen_fake_data.py file.
 
 ### 2. Create DAG (Directed Acyclic Graph)
 
-To generate continuously the data, DAGs need to be created. To perform this task, I decided to schedule the DAG for data generation every 2 minutes (so is the data processing). The DAGs are created in the `dags` folder.
+To generate continuously the data, DAGs need to be created. To perform this task, I decided to schedule the DAG for data generation every 2 minutes (so is the data processing). The DAGs are created in the `airflow\dags` folder.
+Therefore, the `transaction_dag.py` file must be located in the `airflow\dags` folder.
 
 ### Where I got a bit stuck / Interesting points
 
@@ -46,6 +76,9 @@ To generate continuously the data, DAGs need to be created. To perform this task
 - For the data manipulation, I used the `pandasql` library. It allows to use SQL queries on pandas dataframes.
 - For the data visualization, I used the `matplotlib` library to plot the data and `mysql-connector-python` to retrieve the data from the database.
 - Have to be careful with the `faker` library. Especially with the data generated. Did some researches to understand the use of the seed. But after some tests, I decided to give up on the seed. I admit that the order made is done by the same customer generated.
+- When we use SQL queries with `mysql`, the values must be %s (and not %d for example).
+- The order of table creation or deletion is important. For instance, if we decide to create a table but it contains foreign keys, we need to create the table(s) with the foreign keys first.
+- **WARNING for Windows Users**: `pwd` module does not work on Windows as it is a UNIX only package for managing passwords (used to start the airflow server...)
 
 ### Extra: Setup of Makefile
 

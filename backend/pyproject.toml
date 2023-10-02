@@ -14,6 +14,7 @@ ipykernel = "^6.25.2"
 pandas = "^2.1.1"
 pandasql = "^0.7.3"
 mysql-connector-python = "^8.1.0"
+werkzeug = "2.2.3"
 
 
 [build-system]

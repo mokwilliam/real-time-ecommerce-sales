@@ -75,10 +75,6 @@ def get_fake_order(faker) -> dict:
     Returns:
         dict: A dictionary containing fake order data.
     """
-    # Get one location among the list
-    # local = LOCATION_LIST[randint(0, len(LOCATION_LIST) - 1)]
-    local = "en_GB"
-    faker = Faker([local])
     return {
         "order_date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "quantity": faker.pyint(min_value=1, max_value=5),
