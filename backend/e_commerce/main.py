@@ -1,13 +1,13 @@
 from argparse import ArgumentParser
 
-from process_data import clear_project, init_project
+from process_data import clear_project, init_project, process_transaction
 
 if __name__ == "__main__":
     parser = ArgumentParser("Action to perform on the project")
     parser.add_argument(
         "action_on_project",
-        help="The state of the project (init/clear)",
-        choices=["init", "clear"],
+        help="Action to perform on th project",
+        choices=["init", "clear", "one_transaction"],
         default="clear",
     )
     args = parser.parse_args()
@@ -19,3 +19,7 @@ if __name__ == "__main__":
         print("Clearing the project")
         clear_project()
         print("Database e_commerce and tables are cleared")
+    elif args.action_on_project == "one_transaction":
+        print("One transaction is performed")
+        process_transaction()
+        print("The transaction is processed")

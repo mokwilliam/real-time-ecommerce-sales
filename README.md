@@ -41,13 +41,10 @@ export AIRFLOW_HOME=$(pwd)/airflow
 airflow db migrate
 # And here replace the generated airflow.cfg by the personal one
 cp -f backend/airflow.cfg airflow/
-airflow users create \
-    --username admin \
-    --firstname admin \
-    --lastname admin \
-    --role Admin \
-    --email admin \
-    --password admin
+airflow users create --username admin --firstname admin --lastname admin --role Admin --email admin --password admin
+
+# To see the users
+airflow users list
 
 # To run the webserver and the scheduler
 airflow webserver -p 8080
@@ -56,6 +53,7 @@ airflow scheduler
 
 ```bash
 # Some parameters changed made in the airflow.cfg
+# No need to change the default_time, it is utc which is recommended
 executor = LocalExecutor
 load_examples = False
 expose_config = True
@@ -67,7 +65,7 @@ expose_config = True
 
 ### 2. Create DAG (Directed Acyclic Graph)
 
-To generate continuously the data, DAGs need to be created. To perform this task, I decided to schedule the DAG for data generation every 2 minutes (so is the data processing). The DAGs are created in the `airflow\dags` folder.
+To generate continuously the data, DAGs need to be created. To perform this task, I decided to schedule the DAG for data generation every minute (so is the data processing). The DAGs are created in the `airflow\dags` folder.
 Therefore, the `transaction_dag.py` file must be located in the `airflow\dags` folder.
 
 ### Where I got a bit stuck / Interesting points
@@ -78,7 +76,10 @@ Therefore, the `transaction_dag.py` file must be located in the `airflow\dags` f
 - Have to be careful with the `faker` library. Especially with the data generated. Did some researches to understand the use of the seed. But after some tests, I decided to give up on the seed. I admit that the order made is done by the same customer generated.
 - When we use SQL queries with `mysql`, the values must be %s (and not %d for example).
 - The order of table creation or deletion is important. For instance, if we decide to create a table but it contains foreign keys, we need to create the table(s) with the foreign keys first.
-- **WARNING for Windows Users**: `pwd` module does not work on Windows as it is a UNIX only package for managing passwords (used to start the airflow server...)
+- To access MySQL in the terminal, we need to use the command `mysql -u root -p` and then enter the password.
+- To see the schemas of the tables, we can use the command `DESCRIBE table_name;`.
+- For the function `mysql.connector.connect`, we need to specify the database name in the `database` parameter. By default, I used `mysql` for the first connection (to create the `e_commerce` database).
+- **WARNING for Windows Users**: `pwd` module does not work on Windows as it is a UNIX only package for managing passwords (used to start the airflow server...).
 
 ### Extra: Setup of Makefile
 

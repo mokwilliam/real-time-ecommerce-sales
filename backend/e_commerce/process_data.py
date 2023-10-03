@@ -2,7 +2,7 @@ from typing import List
 
 import mysql.connector
 import pandas as pd
-from gen_fake_data import RANDOM_OBJECT_LIST, get_fake_data, get_fake_product
+from e_commerce.gen_fake_data import RANDOM_OBJECT_LIST, get_fake_data, get_fake_product
 
 
 ################################################
@@ -17,22 +17,13 @@ def connect_database(database_name: str):
     Returns:
         The connection.
     """
-    try:
-        mydb = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="root",
-            database=database_name,
-        )
-        return mydb
-    except mysql.connector.Error:
-        mydb = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="root",
-        )
-        print("Cannot connect to database, connexion without database")
-        return mydb
+    mydb = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="root",
+        database=database_name,
+    )
+    return mydb
 
 
 def create_database(database_name: str, cursor) -> None:
@@ -145,11 +136,19 @@ def show_tables(cursor) -> None:
 def init_project() -> None:
     """Initializes the project."""
     # Connect to the database
-    mydb = connect_database("e_commerce")
+    mydb = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="root",
+        database="mysql",
+    )
     mycursor = mydb.cursor()
 
     # Create the database if it doesn't exist
     create_database("e_commerce", mycursor)
+
+    # Use the database
+    mycursor.execute("USE e_commerce")
 
     # Create the tables if they don't exist
     create_table("products", mycursor)
@@ -190,30 +189,24 @@ def process_products(cursor) -> None:
     Args:
         cursor: The cursor of the database.
     """
-    cursor.execute("SELECT COUNT(DISTINCT name) FROM products")
-    products = cursor.fetchall()
-    while products[0][0] < len(RANDOM_OBJECT_LIST):
+    while len(RANDOM_OBJECT_LIST) > 0:
         # Generate fake product
         product = get_fake_product()
 
-        # Save the data (we don't to transform the data)
-        cursor.execute(
-            """
-            INSERT INTO products (name, price, description)
-            VALUES (%s, %s, %s)
-            """,
-            (product["name"], product["price"], product["description"]),
-        )
-        cursor.execute("SELECT COUNT(DISTINCT name) FROM products")
-        products = cursor.fetchall()
+        if product["name"] in RANDOM_OBJECT_LIST:
+            RANDOM_OBJECT_LIST.remove(product["name"])
+            # Save the data (we don't to transform the data)
+            cursor.execute(
+                """
+                INSERT INTO products (name, price, description)
+                VALUES (%s, %s, %s)
+                """,
+                (product["name"], product["price"], product["description"]),
+            )
 
 
-def process_transaction(data: List[dict]) -> None:
-    """Processes the transaction.
-
-    Args:
-        data (List[dict]): A list of dictionaries containing fake data.
-    """
+def process_transaction() -> None:
+    """Processes the transaction."""
     mydb = connect_database("e_commerce")
     mycursor = mydb.cursor()
 
@@ -224,7 +217,7 @@ def process_transaction(data: List[dict]) -> None:
     data[0]["address"].replace("\n", ", ")
 
     # Save the data
-    save_data(data, mycursor)
+    save_data(data, mydb, mycursor)
     mydb.commit()
 
     # Once the process is done, close the database
@@ -232,7 +225,7 @@ def process_transaction(data: List[dict]) -> None:
     mydb.close()
 
 
-def save_data(data: List[dict], cursor):
+def save_data(data: List[dict], db, cursor):
     """Saves the data.
 
     Args:
@@ -241,22 +234,56 @@ def save_data(data: List[dict], cursor):
     """
     # Save the data
     cursor.execute(
+        f"""
+        SELECT customer_id, name
+        FROM customers
+        WHERE name = '{data[0]['name']}'
         """
-        INSERT INTO customers (name, address, email, phone_number, country)
+    )
+    customer = cursor.fetchall()
+    if customer == []:
+        cursor.execute(
+            """
+            INSERT INTO customers (name, address, email, phone_number, country)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            (
+                data[0]["name"],
+                data[0]["address"],
+                data[0]["email"],
+                data[0]["phone_number"],
+                data[0]["country"],
+            ),
+        )
+        db.commit()
+        cursor.execute(
+            f"""
+            SELECT customer_id
+            FROM customers
+            WHERE name = '{data[0]['name']}'
+            """
+        )
+        customer_id = cursor.fetchall()[0][0]
+    else:
+        customer_id = customer[0][0]
+    cursor.execute(
+        f"""
+        SELECT product_id, price
+        FROM products
+        WHERE name = '{data[1]['product']}'
+        """
+    )
+    product_id = cursor.fetchall()[0]
+    cursor.execute(
+        """
+        INSERT INTO orders (order_date, quantity, bill, customer_id, product_id)
         VALUES (%s, %s, %s, %s, %s)
         """,
         (
-            data[0]["name"],
-            data[0]["address"],
-            data[0]["email"],
-            data[0]["phone_number"],
-            data[0]["country"],
+            data[1]["order_date"],
+            data[1]["quantity"],
+            data[1]["quantity"] * product_id[1],
+            customer_id,
+            product_id[0],
         ),
-    )
-    cursor.execute(
-        """
-        INSERT INTO orders (order_date, quantity, product)
-        VALUES (%s, %d, %s)
-        """,
-        (data[1]["order_date"], data[1]["quantity"], data[1]["product"]),
     )
