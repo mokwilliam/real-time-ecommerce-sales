@@ -64,8 +64,8 @@ def get_fake_product() -> dict:
     faker = Faker([local])
     return {
         "name": faker.word(ext_word_list=RANDOM_OBJECT_LIST),
-        "price": faker.pyfloat(min_value=10, max_value=100, right_digits=2),
-        "description": faker.text(),
+        "price": round(faker.pyfloat(min_value=5, max_value=50), 2),
+        "description": faker.text(max_nb_chars=60),
     }
 
 

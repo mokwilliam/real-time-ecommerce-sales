@@ -214,7 +214,7 @@ def process_transaction() -> None:
     data = get_fake_data()
 
     # Transformation here is just a replacement of \n by a comma
-    data[0]["address"].replace("\n", ", ")
+    data[0].update({"address": data[0]["address"].replace("\n", ", ")})
 
     # Save the data
     save_data(data, mydb, mycursor)
